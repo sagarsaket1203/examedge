@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ExamEdge — NEET & JEE Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #0d0f14;
+  --surface: #151820;
+  --surface2: #1c2030;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #f0eeea;
+  --muted: #7a7f8e;
+  --faint: #3a3f50;
+  --neet: #00d4a1;
+  --neet-dim: rgba(0,212,161,0.12);
+  --jee: #a78bfa;
+  --jee-dim: rgba(167,139,250,0.12);
+  --warn: #f59e0b;
+  --warn-dim: rgba(245,158,11,0.12);
+  --danger: #f87171;
+  --danger-dim: rgba(248,113,113,0.1);
+  --success: #4ade80;
+  --r: 10px;
+  --r-sm: 6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+h1,h2,h3,.logo { font-family: 'Syne', sans-serif; }
+code, .mono { font-family: 'DM Mono', monospace; }
+
+/* LAYOUT */
+.app { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 220px; background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh;
+  z-index: 10;
+}
+.main { margin-left: 220px; flex: 1; min-height: 100vh; }
+.topbar {
+  padding: 16px 28px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg); position: sticky; top: 0; z-index: 5;
+}
+.content { padding: 28px; }
+
+/* SIDEBAR */
+.logo-wrap { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); }
+.logo { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+.logo span { color: var(--neet); }
+.logo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.nav-group { padding: 12px 0 4px; }
+.nav-label { font-size: 10px; color: var(--faint); letter-spacing: 0.08em; text-transform: uppercase; padding: 0 18px 6px; font-family: 'Syne', sans-serif; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 18px;
+  font-size: 13px; color: var(--muted); cursor: pointer;
+  transition: all 0.15s; border-left: 2px solid transparent;
+}
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: var(--text); border-left-color: var(--neet); background: rgba(0,212,161,0.06); font-weight: 500; }
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+.sidebar-bottom { margin-top: auto; padding: 14px 18px; border-top: 1px solid var(--border); }
+.user-chip { display: flex; align-items: center; gap: 10px; }
+.av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; font-family: 'Syne', sans-serif; flex-shrink: 0; }
+.av-admin { background: var(--jee-dim); color: var(--jee); border: 1px solid rgba(167,139,250,0.2); }
+.av-neet { background: var(--neet-dim); color: var(--neet); border: 1px solid rgba(0,212,161,0.2); }
+.av-jee { background: var(--jee-dim); color: var(--jee); border: 1px solid rgba(167,139,250,0.2); }
+.av-neutral { background: var(--surface2); color: var(--muted); border: 1px solid var(--border2); }
+.user-name { font-size: 12px; font-weight: 500; color: var(--text); }
+.user-role { font-size: 10px; color: var(--muted); }
+
+/* SCREENS */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* PAGE TITLE */
+.page-header { margin-bottom: 24px; }
+.page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+.page-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+/* CARDS */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 18px;
+}
+.card-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-family: 'Syne', sans-serif; margin-bottom: 14px; }
+
+/* GRID */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+/* STAT CARDS */
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; }
+.stat-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.stat-val { font-size: 28px; font-weight: 700; font-family: 'Syne', sans-serif; letter-spacing: -1px; }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* BADGES */
+.badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px; }
+.badge-neet { background: var(--neet-dim); color: var(--neet); }
+.badge-jee { background: var(--jee-dim); color: var(--jee); }
+.badge-both { background: var(--warn-dim); color: var(--warn); }
+.badge-easy { background: rgba(74,222,128,0.1); color: var(--success); }
+.badge-medium { background: var(--warn-dim); color: var(--warn); }
+.badge-hard { background: var(--danger-dim); color: var(--danger); }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: var(--r-sm); font-size: 13px;
+  font-family: 'DM Sans', sans-serif; cursor: pointer; border: none;
+  transition: all 0.15s; font-weight: 500;
+}
+.btn-primary { background: var(--neet); color: #0a1f18; }
+.btn-primary:hover { background: #00b88c; }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border2); }
+.btn-ghost:hover { color: var(--text); border-color: var(--border2); background: var(--surface2); }
+.btn-danger { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-jee { background: var(--jee); color: #1a0f3a; }
+.btn-jee:hover { background: #9577f0; }
+
+/* FORMS */
+input, select, textarea {
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text); border-radius: var(--r-sm); padding: 9px 12px;
+  font-size: 13px; font-family: 'DM Sans', sans-serif; outline: none;
+  transition: border 0.15s; width: 100%;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--neet); }
+select option { background: var(--surface2); }
+label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px; }
+.form-group { margin-bottom: 14px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* PROGRESS BARS */
+.bar-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.bar-label { font-size: 12px; color: var(--muted); width: 90px; flex-shrink: 0; }
+.bar-track { flex: 1; height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+.bar-pct { font-size: 12px; font-weight: 500; width: 36px; text-align: right; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th { font-size: 11px; color: var(--muted); text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 500; letter-spacing: 0.04em; }
+.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--surface2); }
+
+/* DIVIDER */
+.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+/* TOPBAR */
+.page-label { font-size: 15px; font-weight: 600; font-family: 'Syne', sans-serif; }
+.user-switcher { display: flex; align-items: center; gap: 8px; }
+.user-chip-sm { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px 4px 4px; font-size: 12px; color: var(--muted); }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; padding: 20px;
+}
+.modal { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--r); padding: 24px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+.modal-title { font-size: 16px; font-weight: 700; font-family: 'Syne', sans-serif; margin-bottom: 20px; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+/* TEST INTERFACE */
+.test-topbar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+.test-title { font-size: 14px; font-weight: 600; font-family: 'Syne', sans-serif; }
+.test-meta { font-size: 11px; color: var(--muted); }
+.timer-display { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: var(--warn); letter-spacing: 2px; }
+.timer-display.urgent { color: var(--danger); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.test-body { display: flex; gap: 0; min-height: calc(100vh - 57px); }
+.q-panel { flex: 1; padding: 28px; }
+.palette-panel { width: 180px; background: var(--surface); border-left: 1px solid var(--border); padding: 18px; position: sticky; top: 57px; height: calc(100vh - 57px); overflow-y: auto; }
+.q-number { font-size: 11px; color: var(--muted); margin-bottom: 8px; font-family: 'Syne', sans-serif; }
+.q-text { font-size: 15px; line-height: 1.7; color: var(--text); margin-bottom: 24px; }
+.option-btn {
+  display: flex; align-items: flex-start; gap: 12px; padding: 13px 16px;
+  border: 1px solid var(--border2); border-radius: var(--r-sm);
+  margin-bottom: 10px; cursor: pointer; transition: all 0.15s;
+  background: transparent; width: 100%; text-align: left; color: var(--text); font-size: 13px;
+}
+.option-btn:hover { border-color: var(--jee); background: var(--jee-dim); }
+.option-btn.selected { border-color: var(--neet); background: var(--neet-dim); }
+.opt-key {
+  width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center; font-size: 11px;
+  flex-shrink: 0; font-weight: 500; font-family: 'Syne', sans-serif;
+}
+.option-btn.selected .opt-key { background: var(--neet); color: #0a1f18; border-color: var(--neet); }
+.q-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+.palette-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-family: 'Syne', sans-serif; margin-bottom: 12px; }
+.p-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 16px; }
+.p-btn {
+  width: 28px; height: 28px; border-radius: 5px; font-size: 10px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); color: var(--muted); cursor: pointer;
+  font-family: 'DM Mono', monospace; transition: all 0.1s;
+}
+.p-btn.answered { background: rgba(0,212,161,0.15); color: var(--neet); border-color: rgba(0,212,161,0.3); }
+.p-btn.current { background: var(--jee); color: #1a0f3a; border-color: var(--jee); font-weight: 600; }
+.p-btn.marked { background: var(--warn-dim); color: var(--warn); border-color: rgba(245,158,11,0.3); }
+.p-btn.skipped { background: var(--danger-dim); color: var(--danger); border-color: rgba(248,113,113,0.2); }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--muted); margin-bottom: 5px; }
+.leg-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* RESULTS */
+.result-score { font-size: 56px; font-weight: 700; font-family: 'Syne', sans-serif; letter-spacing: -3px; }
+.result-tag { font-size: 13px; color: var(--muted); }
+
+/* WEAK TOPIC */
+.weak-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.weak-row:last-child { border-bottom: none; }
+.weak-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.weak-name { flex: 1; font-size: 13px; }
+.weak-pct { font-size: 12px; font-weight: 600; }
+
+/* LEADERBOARD */
+.lb-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.lb-row:last-child { border-bottom: none; }
+.lb-rank { font-size: 14px; font-weight: 700; font-family: 'Syne', sans-serif; width: 24px; }
+.lb-rank.gold { color: var(--warn); }
+.lb-rank.silver { color: #9ca3af; }
+.lb-rank.bronze { color: #b45309; }
+.lb-name { flex: 1; font-size: 13px; font-weight: 500; }
+.lb-pts { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+/* ALERTS */
+.alert { padding: 12px 16px; border-radius: var(--r-sm); font-size: 13px; margin-bottom: 16px; }
+.alert-warn { background: var(--warn-dim); color: var(--warn); border: 1px solid rgba(245,158,11,0.2); }
+.alert-danger { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
+.alert-success { background: rgba(74,222,128,0.1); color: var(--success); border: 1px solid rgba(74,222,128,0.2); }
+
+/* TOAST */
+#toast {
+  position: fixed; bottom: 24px; right: 24px; background: var(--surface2);
+  border: 1px solid var(--border2); border-radius: var(--r-sm);
+  padding: 12px 18px; font-size: 13px; color: var(--text);
+  opacity: 0; transform: translateY(10px); transition: all 0.25s; z-index: 999; pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* EMPTY STATE */
+.empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+.empty-icon { font-size: 36px; margin-bottom: 12px; }
+.empty-text { font-size: 14px; }
+.empty-sub { font-size: 12px; margin-top: 6px; }
+
+/* LOADING */
+.loading { text-align: center; padding: 48px; color: var(--muted); font-size: 13px; }
+.spinner { width: 24px; height: 24px; border: 2px solid var(--border2); border-top-color: var(--neet); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .sidebar { width: 100%; height: auto; position: relative; }
+  .main { margin-left: 0; }
+  .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
+  .form-row, .form-row3 { grid-template-columns: 1fr; }
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="loading" style="padding:80px;"><div class="spinner"></div>Loading ExamEdge…</div>
+</div>
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://hfwizgugfdwnchjfhdoa.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhmd2l6Z3VnZmR3bmNoamZoZG9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMTA0ODksImV4cCI6MjA5Mzg4NjQ4OX0.SElcEw0c6PSNtqOgCAkj3XSpUlG860tSQjuFFuFAeCE';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── State ──────────────────────────────────────────────
+let state = {
+  screen: 'dashboard',
+  users: [],
+  questions: [],
+  tests: [],
+  attempts: [],
+  currentUser: null,
+  adminUser: null,
+  // test session
+  activeTest: null,
+  activeAttemptId: null,
+  currentQ: 0,
+  answers: {},      // { question_id: { chosen, marked } }
+  timerInterval: null,
+  secondsLeft: 0,
+  testStartTime: null,
+};
+
+// ── Supabase helpers ───────────────────────────────────
+async function load() {
+  const [u, q, t, a] = await Promise.all([
+    sb.from('users').select('*').order('total_points', { ascending: false }),
+    sb.from('questions').select('*').order('created_at', { ascending: false }),
+    sb.from('tests').select('*').order('created_at', { ascending: false }),
+    sb.from('attempts').select('*').order('submitted_at', { ascending: false }),
+  ]);
+  state.users     = u.data || [];
+  state.questions = q.data || [];
+  state.tests     = t.data || [];
+  state.attempts  = a.data || [];
+  state.adminUser = state.users.find(u => u.role === 'admin') || null;
+  state.currentUser = state.adminUser;
+  render();
+}
+
+function toast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = type==='success' ? 'rgba(74,222,128,0.3)' : type==='error' ? 'rgba(248,113,113,0.3)' : 'var(--border2)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Icons ──────────────────────────────────────────────
+const icons = {
+  dashboard: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
+  test:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>`,
+  analytics: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-5"/></svg>`,
+  trophy:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9H4a2 2 0 010-4h2"/><path d="M18 9h2a2 2 0 000-4h-2"/><path d="M8 21h8M12 17v4"/><path d="M6 5h12v7a6 6 0 01-12 0V5z"/></svg>`,
+  settings:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`,
+  plus:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  users:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>`,
+};
+
+// ── Avatar initials ────────────────────────────────────
+function initials(name) {
+  return (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+}
+function avClass(exam) {
+  if(exam==='NEET') return 'av-neet';
+  if(exam==='JEE') return 'av-jee';
+  return 'av-admin';
+}
+
+// ── Accuracy colour ────────────────────────────────────
+function accColor(pct) {
+  if(pct >= 70) return 'var(--neet)';
+  if(pct >= 50) return 'var(--warn)';
+  return 'var(--danger)';
+}
+
+// ── Analytics helpers ──────────────────────────────────
+function userAccuracy(userId) {
+  const userAttempts = state.attempts.filter(a => a.user_id === userId && a.accuracy_pct !== null);
+  if(!userAttempts.length) return null;
+  return Math.round(userAttempts.reduce((s,a) => s + parseFloat(a.accuracy_pct), 0) / userAttempts.length);
+}
+
+function subjectAccuracy(userId, subject) {
+  // get attempts for tests matching subject
+  const testIds = state.tests.filter(t => t.subject === subject).map(t => t.id);
+  const relevant = state.attempts.filter(a => a.user_id === userId && testIds.includes(a.test_id) && a.accuracy_pct !== null);
+  if(!relevant.length) return null;
+  return Math.round(relevant.reduce((s,a) => s + parseFloat(a.accuracy_pct), 0) / relevant.length);
+}
+
+// ── Navigate ───────────────────────────────────────────
+function nav(screen) {
+  state.screen = screen;
+  render();
+}
+
+// ── RENDER ─────────────────────────────────────────────
+function render() {
+  const app = document.getElementById('app');
+  if(state.screen === 'test-active') {
+    app.innerHTML = renderTestActive();
+    bindTestEvents();
+    return;
+  }
+  app.innerHTML = `
+    <div class="app">
+      ${renderSidebar()}
+      <div class="main">
+        ${renderTopbar()}
+        <div class="content">
+          ${renderScreen()}
+        </div>
+      </div>
+    </div>
+    ${renderModals()}
+  `;
+  bindEvents();
+}
+
+// ── SIDEBAR ────────────────────────────────────────────
+function renderSidebar() {
+  const items = [
+    { id:'dashboard', label:'Dashboard', icon:'dashboard' },
+    { id:'tests',     label:'Take a test', icon:'test' },
+    { id:'analytics', label:'Analytics', icon:'analytics' },
+    { id:'leaderboard', label:'Leaderboard', icon:'trophy' },
+  ];
+  const admin = [
+    { id:'manage-questions', label:'Questions', icon:'settings' },
+    { id:'manage-users',     label:'Users', icon:'users' },
+  ];
+  const cu = state.currentUser;
+  return `
+  <div class="sidebar">
+    <div class="logo-wrap">
+      <div class="logo">Exam<span>Edge</span></div>
+      <div class="logo-sub">Private · ${state.users.length}/5 users</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Platform</div>
+      ${items.map(i=>`
+        <div class="nav-item ${state.screen===i.id?'active':''}" onclick="nav('${i.id}')">
+          ${icons[i.icon]} ${i.label}
+        </div>`).join('')}
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Admin</div>
+      ${admin.map(i=>`
+        <div class="nav-item ${state.screen===i.id?'active':''}" onclick="nav('${i.id}')">
+          ${icons[i.icon]} ${i.label}
+        </div>`).join('')}
+    </div>
+    <div class="sidebar-bottom">
+      <div class="user-chip">
+        <div class="av ${cu ? avClass(cu.exam_type) : 'av-neutral'}">${cu ? initials(cu.name) : '?'}</div>
+        <div>
+          <div class="user-name">${cu ? cu.name : 'No user'}</div>
+          <div class="user-role">${cu ? cu.role : ''}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── TOPBAR ─────────────────────────────────────────────
+function renderTopbar() {
+  const labels = {
+    'dashboard':'Dashboard','tests':'Take a test','analytics':'Analytics',
+    'leaderboard':'Leaderboard','manage-questions':'Manage Questions','manage-users':'Manage Users'
+  };
+  return `
+  <div class="topbar">
+    <div class="page-label">${labels[state.screen]||state.screen}</div>
+    <div class="user-switcher">
+      ${state.users.filter(u=>u.role==='student').map(u=>`
+        <div class="user-chip-sm" onclick="switchUser('${u.id}')" style="cursor:pointer;${state.currentUser?.id===u.id?'border-color:var(--neet);':''}" title="Switch to ${u.name}">
+          <div class="av ${avClass(u.exam_type)}" style="width:22px;height:22px;font-size:9px;">${initials(u.name)}</div>
+          ${u.name.split(' ')[0]}
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function switchUser(id) {
+  state.currentUser = state.users.find(u=>u.id===id) || state.adminUser;
+  render();
+}
+
+// ── SCREENS ────────────────────────────────────────────
+function renderScreen() {
+  switch(state.screen) {
+    case 'dashboard':         return renderDashboard();
+    case 'tests':             return renderTests();
+    case 'analytics':         return renderAnalytics();
+    case 'leaderboard':       return renderLeaderboard();
+    case 'manage-questions':  return renderManageQuestions();
+    case 'manage-users':      return renderManageUsers();
+    default: return '<div class="empty"><div class="empty-text">Screen not found</div></div>';
+  }
+}
+
+// ── DASHBOARD ──────────────────────────────────────────
+function renderDashboard() {
+  const totalTests = state.attempts.filter(a=>a.submitted_at).length;
+  const totalQ = state.questions.length;
+  const avgAcc = state.attempts.filter(a=>a.accuracy_pct).length
+    ? Math.round(state.attempts.filter(a=>a.accuracy_pct).reduce((s,a)=>s+parseFloat(a.accuracy_pct),0)/state.attempts.filter(a=>a.accuracy_pct).length)
+    : 0;
+
+  const students = state.users.filter(u=>u.role==='student');
+  const recentAttempts = state.attempts.filter(a=>a.submitted_at).slice(0,5);
+
+  return `
+  <div class="grid4" style="margin-bottom:20px;">
+    <div class="stat"><div class="stat-label">Tests taken</div><div class="stat-val">${totalTests}</div><div class="stat-sub">all time</div></div>
+    <div class="stat"><div class="stat-label">Questions</div><div class="stat-val">${totalQ}</div><div class="stat-sub">in bank</div></div>
+    <div class="stat"><div class="stat-label">Avg accuracy</div><div class="stat-val">${avgAcc}%</div><div class="stat-sub">across users</div></div>
+    <div class="stat"><div class="stat-label">Users</div><div class="stat-val">${state.users.length}</div><div class="stat-sub">of 5 max</div></div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:20px;">
+    ${students.length === 0 ? `<div class="card" style="grid-column:span 2;">
+      <div class="empty"><div class="empty-text">No students yet.</div><div class="empty-sub">Add users in the Users tab.</div></div>
+    </div>` :
+    students.map(u => {
+      const acc = userAccuracy(u.id);
+      const subjects = u.exam_type === 'NEET' ? ['Biology','Physics','Chemistry'] : ['Maths','Physics','Chemistry'];
+      const recentWeak = subjects.map(s=>({s, acc: subjectAccuracy(u.id,s)})).filter(x=>x.acc!==null && x.acc<60);
+      return `
+      <div class="card">
+        <div class="card-title">${u.exam_type} — ${u.name}</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <div class="av ${avClass(u.exam_type)}" style="width:38px;height:38px;font-size:13px;">${initials(u.name)}</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:600;">${u.name}</div>
+            <div style="font-size:11px;color:var(--muted);">${u.exam_type} 2026</div>
+          </div>
+          <div style="font-size:20px;font-weight:700;font-family:'Syne',sans-serif;color:${acc!==null?accColor(acc):'var(--muted)'};">${acc!==null?acc+'%':'—'}</div>
+        </div>
+        ${subjects.map(s=>{
+          const a = subjectAccuracy(u.id, s);
+          return `<div class="bar-wrap">
+            <div class="bar-label">${s}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${a||0}%;background:${a?accColor(a):'var(--faint)'};"></div></div>
+            <div class="bar-pct" style="color:${a?accColor(a):'var(--muted)'};">${a!==null?a+'%':'—'}</div>
+          </div>`;
+        }).join('')}
+        ${recentWeak.length ? `
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:11px;color:var(--warn);">
+          ⚠ Weak: ${recentWeak.map(x=>x.s).join(' · ')}
+        </div>` : ''}
+      </div>`;
+    }).join('')}
+  </div>
+
+  <div class="card">
+    <div class="card-title">Recent attempts</div>
+    ${recentAttempts.length === 0 ? `<div class="empty"><div class="empty-text">No attempts yet.</div></div>` : `
+    <table class="tbl">
+      <thead><tr><th>User</th><th>Test</th><th>Score</th><th>Accuracy</th><th>Date</th></tr></thead>
+      <tbody>
+        ${recentAttempts.map(a=>{
+          const u = state.users.find(u=>u.id===a.user_id);
+          const t = state.tests.find(t=>t.id===a.test_id);
+          const acc = a.accuracy_pct ? parseFloat(a.accuracy_pct).toFixed(0) : '—';
+          return `<tr>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div class="av ${u?avClass(u.exam_type):'av-neutral'}" style="width:24px;height:24px;font-size:9px;">${u?initials(u.name):'?'}</div>${u?.name||'?'}</div></td>
+            <td style="color:var(--muted);">${t?.title||'Unknown test'}</td>
+            <td>${a.score ?? '—'} / ${a.total_marks ?? '—'}</td>
+            <td><span style="color:${acc!=='—'?accColor(acc):''}">${acc !== '—' ? acc+'%' : '—'}</span></td>
+            <td style="color:var(--muted);font-size:12px;">${a.submitted_at ? new Date(a.submitted_at).toLocaleDateString('en-IN') : 'In progress'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`}
+  </div>`;
+}
+
+// ── TESTS ──────────────────────────────────────────────
+function renderTests() {
+  const cu = state.currentUser;
+  const myExam = cu?.exam_type || 'BOTH';
+  const myTests = state.tests.filter(t =>
+    t.exam_type === myExam || t.exam_type === 'BOTH' || myExam === 'BOTH'
+  );
+
+  return `
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <div>
+      <div class="page-title">Take a test</div>
+      <div class="page-sub">Taking as: <strong>${cu?.name || 'Select a user'}</strong> (${cu?.exam_type||''})</div>
+    </div>
+    <button class="btn btn-primary" onclick="openModal('create-test')">+ Create test</button>
+  </div>
+
+  ${!cu ? `<div class="alert alert-warn">Select a user from the top bar to take tests.</div>` : ''}
+
+  ${myTests.length === 0 ? `
+  <div class="empty">
+    <div class="empty-icon">📋</div>
+    <div class="empty-text">No tests yet</div>
+    <div class="empty-sub">Create a test using the button above</div>
+  </div>` : `
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    ${myTests.map(t => {
+      const qCount = state.questions.filter(q =>
+        (q.exam_type === t.exam_type || q.exam_type === 'BOTH' || t.exam_type === 'BOTH') &&
+        (!t.subject || q.subject === t.subject) &&
+        (!t.chapter || q.chapter === t.chapter)
+      ).length;
+      const marking = t.exam_type === 'NEET' ? '+4 / −1' : '+4 / −1';
+      return `
+      <div class="card" style="display:flex;align-items:center;gap:16px;">
+        <div style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:${t.exam_type==='NEET'?'var(--neet-dim)':t.exam_type==='JEE'?'var(--jee-dim)':'var(--warn-dim)'};font-size:20px;">
+          ${t.exam_type==='NEET'?'🧬':t.exam_type==='JEE'?'📐':'📚'}
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:600;margin-bottom:3px;">${t.title}</div>
+          <div style="font-size:12px;color:var(--muted);">
+            <span class="badge badge-${t.exam_type.toLowerCase()}">${t.exam_type}</span>
+            &nbsp;${t.duration_min} min · ${qCount} available Qs · ${marking} marking
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="startTest('${t.id}')">Start →</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTest('${t.id}')">Delete</button>
+      </div>`;
+    }).join('')}
+  </div>`}`;
+}
+
+// ── START TEST ─────────────────────────────────────────
+async function startTest(testId) {
+  const cu = state.currentUser;
+  if(!cu) { toast('Select a user first', 'error'); return; }
+  const test = state.tests.find(t=>t.id===testId);
+  if(!test) return;
+
+  // get matching questions
+  const qs = state.questions.filter(q =>
+    (q.exam_type === test.exam_type || q.exam_type === 'BOTH' || test.exam_type === 'BOTH') &&
+    (!test.subject || q.subject === test.subject) &&
+    (!test.chapter || q.chapter === test.chapter)
+  ).slice(0, 90); // cap at 90
+
+  if(qs.length === 0) { toast('No questions match this test config', 'error'); return; }
+
+  // create attempt in DB
+  const { data, error } = await sb.from('attempts').insert({
+    user_id: cu.id, test_id: testId,
+    total_marks: qs.length * 4,
+  }).select().single();
+  if(error) { toast('Error starting test', 'error'); return; }
+
+  state.activeTest = { test, questions: qs };
+  state.activeAttemptId = data.id;
+  state.currentQ = 0;
+  state.answers = {};
+  state.secondsLeft = test.duration_min * 60;
+  state.testStartTime = Date.now();
+  state.screen = 'test-active';
+  render();
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(() => {
+    state.secondsLeft--;
+    const el = document.getElementById('timer');
+    if(el) {
+      el.textContent = formatTime(state.secondsLeft);
+      if(state.secondsLeft <= 300) el.classList.add('urgent');
+    }
+    if(state.secondsLeft <= 0) { clearInterval(state.timerInterval); submitTest(); }
+  }, 1000);
+}
+
+function formatTime(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  return [h,m,sec].map(x=>String(x).padStart(2,'0')).join(':');
+}
+
+// ── TEST UI ────────────────────────────────────────────
+function renderTestActive() {
+  const { test, questions } = state.activeTest;
+  const q = questions[state.currentQ];
+  const ans = state.answers[q.id] || {};
+  const totalQ = questions.length;
+
+  const paletteItems = questions.map((qq, i) => {
+    const a = state.answers[qq.id] || {};
+    let cls = '';
+    if(i === state.currentQ) cls = 'current';
+    else if(a.marked) cls = 'marked';
+    else if(a.chosen) cls = 'answered';
+    return `<div class="p-btn ${cls}" onclick="goToQ(${i})">${i+1}</div>`;
+  }).join('');
+
+  return `
+  <div style="min-height:100vh;background:var(--bg);">
+    <div class="test-topbar">
+      <div>
+        <div class="test-title">${test.title}</div>
+        <div class="test-meta">Q${state.currentQ+1} of ${totalQ} · ${test.exam_type} · +4/−1</div>
+      </div>
+      <div id="timer" class="timer-display">${formatTime(state.secondsLeft)}</div>
+    </div>
+    <div class="test-body">
+      <div class="q-panel">
+        <div class="q-number">Question ${state.currentQ+1}</div>
+        <div class="q-text">${q.question_text}</div>
+        ${['A','B','C','D'].map(opt => `
+          <button class="option-btn ${ans.chosen===opt?'selected':''}" onclick="selectAnswer('${q.id}','${opt}')">
+            <div class="opt-key">${opt}</div>
+            <span>${q['option_'+opt.toLowerCase()]}</span>
+          </button>`).join('')}
+        <div class="q-actions">
+          ${state.currentQ > 0 ? `<button class="btn btn-ghost" onclick="goToQ(${state.currentQ-1})">← Prev</button>` : ''}
+          <button class="btn" style="background:var(--warn-dim);color:var(--warn);border:1px solid rgba(245,158,11,0.2);" onclick="toggleMark('${q.id}')">
+            ${ans.marked ? '★ Marked' : '☆ Mark for review'}
+          </button>
+          ${state.currentQ < totalQ-1 ? `<button class="btn btn-ghost" onclick="goToQ(${state.currentQ+1})">Next →</button>` : ''}
+          <button class="btn btn-primary" style="margin-left:auto;" onclick="submitTest()">Submit test</button>
+        </div>
+      </div>
+      <div class="palette-panel">
+        <div class="palette-title">Question palette</div>
+        <div class="p-grid">${paletteItems}</div>
+        <div>
+          <div class="legend-item"><div class="leg-sq" style="background:rgba(0,212,161,0.15);border:1px solid rgba(0,212,161,0.3);"></div>Answered</div>
+          <div class="legend-item"><div class="leg-sq" style="background:var(--jee);"></div>Current</div>
+          <div class="legend-item"><div class="leg-sq" style="background:var(--warn-dim);border:1px solid rgba(245,158,11,0.3);"></div>Marked</div>
+          <div class="legend-item"><div class="leg-sq" style="background:var(--border);"></div>Not visited</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bindTestEvents() {}
+
+function selectAnswer(qId, opt) {
+  if(!state.answers[qId]) state.answers[qId] = {};
+  state.answers[qId].chosen = state.answers[qId].chosen === opt ? null : opt;
+  render();
+  startTimer();
+}
+
+function toggleMark(qId) {
+  if(!state.answers[qId]) state.answers[qId] = {};
+  state.answers[qId].marked = !state.answers[qId].marked;
+  render();
+  startTimer();
+}
+
+function goToQ(i) {
+  state.currentQ = i;
+  render();
+  startTimer();
+}
+
+async function submitTest() {
+  clearInterval(state.timerInterval);
+  const { test, questions } = state.activeTest;
+  const timeTaken = Math.floor((Date.now() - state.testStartTime) / 1000);
+
+  let score = 0;
+  const answerRows = [];
+  questions.forEach(q => {
+    const a = state.answers[q.id] || {};
+    const chosen = a.chosen || 'skipped';
+    const isCorrect = chosen !== 'skipped' && chosen === q.correct;
+    if(isCorrect) score += 4;
+    else if(chosen !== 'skipped') score -= 1;
+    answerRows.push({ attempt_id: state.activeAttemptId, question_id: q.id, chosen, is_correct: isCorrect, is_marked: !!a.marked });
+  });
+
+  const totalMarks = questions.length * 4;
+  const accuracy = Math.max(0, (score / totalMarks) * 100);
+  const points = Math.max(0, score);
+
+  await sb.from('attempts').update({
+    submitted_at: new Date().toISOString(),
+    score, total_marks: totalMarks,
+    accuracy_pct: accuracy.toFixed(2),
+    time_taken_s: timeTaken,
+    points_earned: points,
+  }).eq('id', state.activeAttemptId);
+
+  if(answerRows.length) await sb.from('answers').insert(answerRows);
+
+  // update user points
+  if(state.currentUser) {
+    const cu = state.users.find(u=>u.id===state.currentUser.id);
+    if(cu) await sb.from('users').update({ total_points: (cu.total_points||0) + points }).eq('id', cu.id);
+  }
+
+  state.activeTest = null; state.activeAttemptId = null; state.screen = 'dashboard';
+  await load();
+  toast(`Test submitted! Score: ${score}/${totalMarks}`, 'success');
+}
+
+// ── ANALYTICS ─────────────────────────────────────────
+function renderAnalytics() {
+  const cu = state.currentUser;
+  if(!cu) return `<div class="alert alert-warn">Select a user from the top bar.</div>`;
+
+  const subjects = cu.exam_type === 'NEET' ? ['Biology','Physics','Chemistry'] :
+                   cu.exam_type === 'JEE'  ? ['Maths','Physics','Chemistry'] :
+                   ['Biology','Maths','Physics','Chemistry'];
+
+  const myAttempts = state.attempts.filter(a=>a.user_id===cu.id && a.submitted_at);
+  const overall = userAccuracy(cu.id);
+  const weakTopics = subjects.map(s=>({ s, acc: subjectAccuracy(cu.id,s) }))
+    .filter(x=>x.acc!==null && x.acc < 60)
+    .sort((a,b)=>a.acc-b.acc);
+
+  return `
+  <div style="margin-bottom:20px;">
+    <div class="page-title">${cu.name}'s Analytics</div>
+    <div class="page-sub">${cu.exam_type} · ${myAttempts.length} tests completed</div>
+  </div>
+
+  <div class="grid4" style="margin-bottom:20px;">
+    <div class="stat"><div class="stat-label">Overall accuracy</div><div class="stat-val" style="color:${overall!==null?accColor(overall):'var(--muted)'};">${overall!==null?overall+'%':'—'}</div></div>
+    <div class="stat"><div class="stat-label">Tests completed</div><div class="stat-val">${myAttempts.length}</div></div>
+    <div class="stat"><div class="stat-label">Weak subjects</div><div class="stat-val" style="color:var(--danger);">${weakTopics.length}</div></div>
+    <div class="stat"><div class="stat-label">Total points</div><div class="stat-val" style="color:var(--jee);">${cu.total_points||0}</div></div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:20px;">
+    <div class="card">
+      <div class="card-title">Subject accuracy</div>
+      ${subjects.map(s=>{
+        const a = subjectAccuracy(cu.id,s);
+        return `<div class="bar-wrap">
+          <div class="bar-label">${s}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${a||0}%;background:${a?accColor(a):'var(--faint)'};"></div></div>
+          <div class="bar-pct" style="color:${a?accColor(a):'var(--muted)'};">${a!==null?a+'%':'—'}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">⚠ Weak topics (below 60%)</div>
+      ${weakTopics.length === 0 ? `<div class="empty"><div class="empty-text">No weak subjects detected yet.</div><div class="empty-sub">Take more tests to see analysis.</div></div>` :
+      weakTopics.map(w=>`
+        <div class="weak-row">
+          <div class="weak-dot" style="background:${accColor(w.acc)};"></div>
+          <div class="weak-name">${w.s}</div>
+          <div class="weak-pct" style="color:${accColor(w.acc)};">${w.acc}%</div>
+        </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Test history</div>
+    ${myAttempts.length === 0 ? `<div class="empty"><div class="empty-text">No attempts yet.</div></div>` : `
+    <table class="tbl">
+      <thead><tr><th>Test</th><th>Score</th><th>Accuracy</th><th>Time</th><th>Date</th></tr></thead>
+      <tbody>
+        ${myAttempts.slice(0,10).map(a=>{
+          const t = state.tests.find(t=>t.id===a.test_id);
+          const acc = a.accuracy_pct ? parseFloat(a.accuracy_pct).toFixed(0) : '—';
+          const mins = a.time_taken_s ? Math.floor(a.time_taken_s/60)+'m '+((a.time_taken_s%60))+'s' : '—';
+          return `<tr>
+            <td>${t?.title||'Unknown'}</td>
+            <td class="mono">${a.score??'—'} / ${a.total_marks??'—'}</td>
+            <td><span style="color:${acc!=='—'?accColor(acc):''}">${acc!=='—'?acc+'%':'—'}</span></td>
+            <td style="color:var(--muted);">${mins}</td>
+            <td style="color:var(--muted);font-size:12px;">${a.submitted_at?new Date(a.submitted_at).toLocaleDateString('en-IN'):'—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`}
+  </div>`;
+}
+
+// ── LEADERBOARD ────────────────────────────────────────
+function renderLeaderboard() {
+  const sorted = [...state.users].sort((a,b)=>(b.total_points||0)-(a.total_points||0));
+  const rankClass = i => i===0?'gold':i===1?'silver':i===2?'bronze':'';
+  const medals = ['🥇','🥈','🥉'];
+
+  const weeklyAttempts = state.attempts.filter(a => {
+    if(!a.submitted_at) return false;
+    const d = new Date(a.submitted_at);
+    const now = new Date();
+    return (now - d) < 7 * 24 * 60 * 60 * 1000;
+  });
+  const weeklyPts = {};
+  weeklyAttempts.forEach(a => { weeklyPts[a.user_id] = (weeklyPts[a.user_id]||0) + (a.points_earned||0); });
+  const weeklyTop = Object.entries(weeklyPts).sort((a,b)=>b[1]-a[1]);
+  const weeklyTopUser = weeklyTop.length ? state.users.find(u=>u.id===weeklyTop[0][0]) : null;
+
+  return `
+  <div style="margin-bottom:24px;">
+    <div class="page-title">Leaderboard</div>
+    <div class="page-sub">All-time rankings · Points earned from tests</div>
+  </div>
+
+  ${weeklyTopUser ? `
+  <div class="alert alert-success" style="margin-bottom:20px;">
+    🏆 This week's top performer: <strong>${weeklyTopUser.name}</strong> with ${weeklyPts[weeklyTopUser.id]} pts
+  </div>` : ''}
+
+  <div class="card" style="max-width:500px;">
+    <div class="card-title">All-time rankings</div>
+    ${sorted.length === 0 ? `<div class="empty"><div class="empty-text">No users yet.</div></div>` :
+    sorted.map((u,i)=>`
+      <div class="lb-row">
+        <div class="lb-rank ${rankClass(i)}">${medals[i]||i+1}</div>
+        <div class="av ${avClass(u.exam_type)}" style="width:30px;height:30px;font-size:11px;">${initials(u.name)}</div>
+        <div class="lb-name">${u.name} <span style="font-size:11px;color:var(--muted);">${u.exam_type}</span></div>
+        <div class="lb-pts">${u.total_points||0} pts</div>
+      </div>`).join('')}
+  </div>`;
+}
+
+// ── MANAGE QUESTIONS ───────────────────────────────────
+function renderManageQuestions() {
+  const qs = state.questions;
+  return `
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <div>
+      <div class="page-title">Question Bank</div>
+      <div class="page-sub">${qs.length} questions · NEET + JEE</div>
+    </div>
+    <button class="btn btn-primary" onclick="openModal('add-question')">+ Add question</button>
+  </div>
+
+  ${qs.length === 0 ? `
+  <div class="empty">
+    <div class="empty-icon">📝</div>
+    <div class="empty-text">No questions yet</div>
+    <div class="empty-sub">Add your first question using the button above</div>
+  </div>` : `
+  <div class="card">
+    <table class="tbl">
+      <thead><tr><th>Question</th><th>Exam</th><th>Subject</th><th>Chapter</th><th>Difficulty</th><th>Actions</th></tr></thead>
+      <tbody>
+        ${qs.map(q=>`
+          <tr>
+            <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${q.question_text}</td>
+            <td><span class="badge badge-${q.exam_type.toLowerCase()}">${q.exam_type}</span></td>
+            <td style="color:var(--muted);">${q.subject}</td>
+            <td style="color:var(--muted);">${q.chapter}</td>
+            <td><span class="badge badge-${q.difficulty}">${q.difficulty}</span></td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteQuestion('${q.id}')">Delete</button></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`}`;
+}
+
+// ── MANAGE USERS ───────────────────────────────────────
+function renderManageUsers() {
+  return `
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <div>
+      <div class="page-title">Users</div>
+      <div class="page-sub">${state.users.length}/5 users · invite-only</div>
+    </div>
+    ${state.users.length < 5 ? `<button class="btn btn-primary" onclick="openModal('add-user')">+ Add user</button>` : `<div style="font-size:12px;color:var(--muted);">Max 5 users reached</div>`}
+  </div>
+  <div class="card">
+    <table class="tbl">
+      <thead><tr><th>Name</th><th>Exam</th><th>Role</th><th>Points</th><th>Actions</th></tr></thead>
+      <tbody>
+        ${state.users.map(u=>`
+          <tr>
+            <td><div style="display:flex;align-items:center;gap:10px;"><div class="av ${avClass(u.exam_type)}" style="width:28px;height:28px;font-size:10px;">${initials(u.name)}</div><div><div style="font-weight:500;">${u.name}</div><div style="font-size:11px;color:var(--muted);">${u.email}</div></div></div></td>
+            <td><span class="badge badge-${u.exam_type.toLowerCase()}">${u.exam_type}</span></td>
+            <td style="color:var(--muted);">${u.role}</td>
+            <td class="mono">${u.total_points||0}</td>
+            <td>${u.role!=='admin'?`<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Remove</button>`:'<span style="font-size:11px;color:var(--muted);">admin</span>'}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+// ── MODALS ─────────────────────────────────────────────
+function renderModals() {
+  return `
+  <div id="modal-add-question" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-title">Add question</div>
+      <div class="form-row">
+        <div class="form-group"><label>Exam type</label><select id="q-exam"><option value="NEET">NEET</option><option value="JEE">JEE</option><option value="BOTH">Both</option></select></div>
+        <div class="form-group"><label>Difficulty</label><select id="q-diff"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Subject</label><input id="q-subject" placeholder="e.g. Biology, Maths"/></div>
+        <div class="form-group"><label>Chapter</label><input id="q-chapter" placeholder="e.g. Cell Biology"/></div>
+      </div>
+      <div class="form-group"><label>Question</label><textarea id="q-text" rows="3" placeholder="Enter the question text..."></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Option A</label><input id="q-a" placeholder="Option A"/></div>
+        <div class="form-group"><label>Option B</label><input id="q-b" placeholder="Option B"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Option C</label><input id="q-c" placeholder="Option C"/></div>
+        <div class="form-group"><label>Option D</label><input id="q-d" placeholder="Option D"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Correct answer</label><select id="q-correct"><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+        <div class="form-group"><label>Source (optional)</label><input id="q-source" placeholder="e.g. NCERT Ch 3, PYQ 2022"/></div>
+      </div>
+      <div class="form-group"><label>Explanation (optional)</label><textarea id="q-explanation" rows="2" placeholder="Step-by-step solution..."></textarea></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('add-question')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveQuestion()">Save question</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-add-user" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-title">Add user</div>
+      <div class="form-group"><label>Full name</label><input id="u-name" placeholder="e.g. Rahul Sharma"/></div>
+      <div class="form-group"><label>Email</label><input id="u-email" type="email" placeholder="e.g. rahul@gmail.com"/></div>
+      <div class="form-group"><label>Exam</label><select id="u-exam"><option value="NEET">NEET</option><option value="JEE">JEE</option><option value="BOTH">Both</option></select></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('add-user')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveUser()">Add user</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-create-test" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-title">Create test</div>
+      <div class="form-group"><label>Test title</label><input id="t-title" placeholder="e.g. NEET Bio — Cell Biology Ch 3"/></div>
+      <div class="form-row">
+        <div class="form-group"><label>Exam type</label><select id="t-exam"><option value="NEET">NEET</option><option value="JEE">JEE</option><option value="BOTH">Both</option></select></div>
+        <div class="form-group"><label>Test type</label><select id="t-type"><option value="chapter">Chapter-wise</option><option value="subject">Subject-wise</option><option value="full_mock">Full mock</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Subject (optional filter)</label><input id="t-subject" placeholder="e.g. Biology"/></div>
+        <div class="form-group"><label>Chapter (optional filter)</label><input id="t-chapter" placeholder="e.g. Cell Biology"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Duration (minutes)</label><input id="t-duration" type="number" value="45"/></div>
+        <div class="form-group"><label>Total marks</label><input id="t-marks" type="number" value="180"/></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('create-test')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveTest()">Create test</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function openModal(name) {
+  document.getElementById('modal-'+name).style.display = 'flex';
+}
+function closeModal(name) {
+  document.getElementById('modal-'+name).style.display = 'none';
+}
+
+// ── SAVE ACTIONS ───────────────────────────────────────
+async function saveQuestion() {
+  const data = {
+    exam_type: document.getElementById('q-exam').value,
+    subject:   document.getElementById('q-subject').value.trim(),
+    chapter:   document.getElementById('q-chapter').value.trim(),
+    difficulty:document.getElementById('q-diff').value,
+    question_text: document.getElementById('q-text').value.trim(),
+    option_a:  document.getElementById('q-a').value.trim(),
+    option_b:  document.getElementById('q-b').value.trim(),
+    option_c:  document.getElementById('q-c').value.trim(),
+    option_d:  document.getElementById('q-d').value.trim(),
+    correct:   document.getElementById('q-correct').value,
+    explanation: document.getElementById('q-explanation').value.trim(),
+    source:    document.getElementById('q-source').value.trim(),
+    created_by: state.adminUser?.id,
+  };
+  if(!data.subject||!data.chapter||!data.question_text||!data.option_a||!data.option_b||!data.option_c||!data.option_d) {
+    toast('Fill in all required fields', 'error'); return;
+  }
+  const { error } = await sb.from('questions').insert(data);
+  if(error) { toast('Error saving question', 'error'); return; }
+  closeModal('add-question'); toast('Question added!', 'success'); await load();
+}
+
+async function saveUser() {
+  if(state.users.length >= 5) { toast('Max 5 users reached', 'error'); return; }
+  const data = {
+    name:      document.getElementById('u-name').value.trim(),
+    email:     document.getElementById('u-email').value.trim(),
+    exam_type: document.getElementById('u-exam').value,
+    role: 'student',
+  };
+  if(!data.name||!data.email) { toast('Name and email required', 'error'); return; }
+  const { error } = await sb.from('users').insert(data);
+  if(error) { toast('Error adding user: '+error.message, 'error'); return; }
+  closeModal('add-user'); toast('User added!', 'success'); await load();
+}
+
+async function saveTest() {
+  const data = {
+    title:       document.getElementById('t-title').value.trim(),
+    exam_type:   document.getElementById('t-exam').value,
+    test_type:   document.getElementById('t-type').value,
+    subject:     document.getElementById('t-subject').value.trim() || null,
+    chapter:     document.getElementById('t-chapter').value.trim() || null,
+    duration_min:parseInt(document.getElementById('t-duration').value)||45,
+    total_marks: parseInt(document.getElementById('t-marks').value)||180,
+    created_by:  state.adminUser?.id,
+  };
+  if(!data.title) { toast('Test title required', 'error'); return; }
+  const { error } = await sb.from('tests').insert(data);
+  if(error) { toast('Error creating test', 'error'); return; }
+  closeModal('create-test'); toast('Test created!', 'success'); await load();
+}
+
+async function deleteQuestion(id) {
+  if(!confirm('Delete this question?')) return;
+  await sb.from('questions').delete().eq('id', id);
+  toast('Question deleted'); await load();
+}
+
+async function deleteTest(id) {
+  if(!confirm('Delete this test?')) return;
+  await sb.from('tests').delete().eq('id', id);
+  toast('Test deleted'); await load();
+}
+
+async function deleteUser(id) {
+  if(!confirm('Remove this user?')) return;
+  await sb.from('users').delete().eq('id', id);
+  toast('User removed'); await load();
+}
+
+// ── BIND EVENTS ────────────────────────────────────────
+function bindEvents() {
+  // close modals on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', e => { if(e.target === el) el.style.display = 'none'; });
+  });
+}
+
+// ── BOOT ───────────────────────────────────────────────
+load();
+</script>
+</body>
+</html>
